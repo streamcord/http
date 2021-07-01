@@ -37,6 +37,8 @@ func (c *Client) MakeRequest(r objects.Request) (*http.Response, error) {
 		return nil, err
 	}
 
+	// TODO: handle ratelimits
+
 	return res, nil
 }
 

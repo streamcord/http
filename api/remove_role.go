@@ -7,17 +7,16 @@ import (
 	"time"
 
 	"github.com/streamcord/http/objects"
-	"github.com/streamcord/http/payloads"
 	"github.com/streamcord/http/ratelimit"
 )
 
-func (c *Client) RemoveRole(payload payloads.UpdateMemberRoles) (*http.Response, error) {
+func (c *Client) RemoveRole(gID string, uID string, rID string) (*http.Response, error) {
 	req := objects.Request{
-		Endpoint: fmt.Sprintf("/guilds/%s/members/%s/roles/%s", payload.GuildID, payload.UserID, payload.RoleID),
+		Endpoint: fmt.Sprintf("/guilds/%s/members/%s/roles/%s", gID, uID, rID),
 		Method:   "DELETE",
 	}
 
-	bID := fmt.Sprintf("/guilds/%s/members", payload.GuildID)
+	bID := fmt.Sprintf("/guilds/%s/members", gID)
 	bucket := ratelimit.GetBucket(bID)
 	if bucket != nil {
 		if bucket.Remaining == 0 {

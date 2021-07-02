@@ -32,6 +32,7 @@ func (c *Client) MakeRequest(r objects.Request) (*http.Response, error) {
 	// Set request headers - individual routes shouldn't need their own headers
 	req.Header.Set("Authorization", c.Token)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "Streamcord (https://github.com/streamcord/http, 1.0.0)")
 
 	bucket := ratelimit.GetBucket(r.RatelimitBucket)
 	if bucket != nil {
@@ -49,7 +50,30 @@ func (c *Client) MakeRequest(r objects.Request) (*http.Response, error) {
 		return nil, err
 	}
 
-	ratelimit.UpdateBucket(r.RatelimitBucket, res)
+	// If we get a 500/502 error for some reason, we can try again a minute later
+	// In this case, ratelimits shouldn't really be a problem for long-lasting problems since Discord likely won't be receiving the request
+	// Therefore a minute delay should not cause any interference.
+	if res.StatusCode == http.StatusInternalServerError || res.StatusCode == http.StatusBadGateway {
+		time.Sleep(time.Minute)
+		return c.MakeRequest(r)
+	} else if res.StatusCode < http.StatusInternalServerError {
+		// Update ratelimit state using the response headers.
+		// We don't want to be calling this if we get a 5xx error since there won't be any ratelimit headers to handle.
+		ratelimit.UpdateBucket(r.RatelimitBucket, res)
+	}
+
+	// If we've got here then we've hit a ratelimit. Oh dear.
+	// So, we'll retry the request when we can.
+	// The bucket's ratelimit values should've already been updated by this point.
+	// We don't need to change anything if the ratelimit is global as the reset header will refer to the global ratelimit.
+	if res.StatusCode == http.StatusTooManyRequests {
+		wait := time.Duration(bucket.Reset - time.Now().Unix())
+		if wait > 0 {
+			time.Sleep(wait * time.Second)
+			return c.MakeRequest(r)
+		}
+	}
+
 	return res, nil
 }
 

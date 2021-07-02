@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/streamcord/http/objects"
+	"github.com/streamcord/http/ratelimit"
 
 	json "github.com/json-iterator/go"
 )
@@ -32,13 +33,23 @@ func (c *Client) MakeRequest(r objects.Request) (*http.Response, error) {
 	req.Header.Set("Authorization", c.Token)
 	req.Header.Set("Content-Type", "application/json")
 
+	bucket := ratelimit.GetBucket(r.RatelimitBucket)
+	if bucket != nil {
+		if bucket.Remaining == 0 {
+			wait := time.Duration(bucket.Reset - time.Now().Unix())
+			// If wait is below 0 then that means it's already reset and we don't have to wait
+			if wait > 0 {
+				time.Sleep(wait * time.Second)
+			}
+		}
+	}
+
 	res, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: handle ratelimits
-
+	ratelimit.UpdateBucket(r.RatelimitBucket, res)
 	return res, nil
 }
 

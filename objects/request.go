@@ -1,7 +1,8 @@
 package objects
 
 type Request struct {
-	Endpoint string
-	Method   string
-	Payload  interface{}
+	Endpoint        string
+	Method          string
+	Payload         interface{}
+	RatelimitBucket string
 }

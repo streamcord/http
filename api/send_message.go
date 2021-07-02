@@ -4,30 +4,17 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/streamcord/http/objects"
 	"github.com/streamcord/http/payloads"
-	"github.com/streamcord/http/ratelimit"
 )
 
 func (c *Client) SendMessage(cID string, payload payloads.SendMessage) (*http.Response, error) {
 	req := objects.Request{
-		Endpoint: fmt.Sprintf("/channels/%s/messages", cID),
-		Method:   "POST",
-		Payload:  payload,
-	}
-
-	bID := fmt.Sprintf("/channels/%s/messages", cID)
-	bucket := ratelimit.GetBucket(bID)
-	if bucket != nil {
-		if bucket.Remaining == 0 {
-			wait := time.Duration(bucket.Reset - time.Now().Unix())
-			// If wait is below 0 then that means it's already reset and we don't have to wait
-			if wait > 0 {
-				time.Sleep(wait * time.Second)
-			}
-		}
+		Endpoint:        fmt.Sprintf("/channels/%s/messages", cID),
+		Method:          "POST",
+		Payload:         payload,
+		RatelimitBucket: fmt.Sprintf("/channels/%s/messages", cID),
 	}
 
 	res, err := c.MakeRequest(req)
@@ -46,6 +33,5 @@ func (c *Client) SendMessage(cID string, payload payloads.SendMessage) (*http.Re
 		}
 	}
 
-	ratelimit.UpdateBucket(bID, res)
 	return res, nil
 }

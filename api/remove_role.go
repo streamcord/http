@@ -4,28 +4,15 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/streamcord/http/objects"
-	"github.com/streamcord/http/ratelimit"
 )
 
 func (c *Client) RemoveRole(gID string, uID string, rID string) (*http.Response, error) {
 	req := objects.Request{
-		Endpoint: fmt.Sprintf("/guilds/%s/members/%s/roles/%s", gID, uID, rID),
-		Method:   "DELETE",
-	}
-
-	bID := fmt.Sprintf("/guilds/%s/members", gID)
-	bucket := ratelimit.GetBucket(bID)
-	if bucket != nil {
-		if bucket.Remaining == 0 {
-			wait := time.Duration(bucket.Reset - time.Now().Unix())
-			// If wait is below 0 then that means it's already reset and we don't have to wait
-			if wait > 0 {
-				time.Sleep(wait * time.Second)
-			}
-		}
+		Endpoint:        fmt.Sprintf("/guilds/%s/members/%s/roles/%s", gID, uID, rID),
+		Method:          "DELETE",
+		RatelimitBucket: fmt.Sprintf("/guilds/%s/members", gID),
 	}
 
 	res, err := c.MakeRequest(req)
@@ -44,6 +31,5 @@ func (c *Client) RemoveRole(gID string, uID string, rID string) (*http.Response,
 		}
 	}
 
-	ratelimit.UpdateBucket(bID, res)
 	return res, nil
 }

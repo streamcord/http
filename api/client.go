@@ -64,9 +64,9 @@ func (c *Client) MakeRequest(r objects.Request) (*http.Response, error) {
 
 	// If we've got here then we've hit a ratelimit. Oh dear.
 	// So, we'll retry the request when we can.
-	// The bucket's ratelimit values should've already been updated by this point.
 	// We don't need to change anything if the ratelimit is global as the reset header will refer to the global ratelimit.
 	if res.StatusCode == http.StatusTooManyRequests {
+		bucket = ratelimit.GetBucket(r.RatelimitBucket)
 		wait := time.Duration(bucket.Reset - time.Now().Unix())
 		if wait > 0 {
 			time.Sleep(wait * time.Second)

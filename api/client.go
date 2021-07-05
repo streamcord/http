@@ -59,7 +59,10 @@ func (c *Client) MakeRequest(r objects.Request) (*http.Response, error) {
 	} else if res.StatusCode < http.StatusInternalServerError {
 		// Update ratelimit state using the response headers.
 		// We don't want to be calling this if we get a 5xx error since there won't be any ratelimit headers to handle.
-		ratelimit.UpdateBucket(r.RatelimitBucket, res)
+		err := ratelimit.UpdateBucket(r.RatelimitBucket, res)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// If we've got here then we've hit a ratelimit. Oh dear.
@@ -67,10 +70,12 @@ func (c *Client) MakeRequest(r objects.Request) (*http.Response, error) {
 	// We don't need to change anything if the ratelimit is global as the reset header will refer to the global ratelimit.
 	if res.StatusCode == http.StatusTooManyRequests {
 		bucket = ratelimit.GetBucket(r.RatelimitBucket)
-		wait := time.Duration(bucket.Reset - time.Now().Unix())
-		if wait > 0 {
-			time.Sleep(wait * time.Second)
-			return c.MakeRequest(r)
+		if bucket != nil {
+			wait := time.Duration(bucket.Reset - time.Now().Unix())
+			if wait > 0 {
+				time.Sleep(wait * time.Second)
+				return c.MakeRequest(r)
+			}
 		}
 	}
 

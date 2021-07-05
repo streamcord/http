@@ -21,17 +21,11 @@ func UpdateBucket(id string, res *http.Response) error {
 		return err
 	}
 
-	b, ok := Buckets[id]
-	if !ok {
-		NewBucket(id, int(remaining), int(limit), reset)
-		return nil
+	Buckets[id] = Bucket{
+		Limit:     int(limit),
+		Remaining: int(remaining),
+		Reset:     reset,
 	}
-
-	b.Limit = int(limit)
-	b.Remaining = int(remaining)
-	b.Reset = reset
-
-	Buckets[id] = b
 
 	return nil
 }

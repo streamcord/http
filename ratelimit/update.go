@@ -6,24 +6,24 @@ import (
 )
 
 func UpdateBucket(id string, res *http.Response) error {
-	remaining, err := strconv.ParseInt(res.Header.Get("X-RateLimit-Remaining"), 10, 8)
+	remaining, err := strconv.Atoi(res.Header.Get("X-RateLimit-Remaining"))
 	if err != nil {
 		return err
 	}
 
-	reset, err := strconv.ParseInt(res.Header.Get("X-RateLimit-Reset"), 10, 64)
+	reset, err := strconv.ParseFloat(res.Header.Get("X-RateLimit-Reset"), 64)
 	if err != nil {
 		return err
 	}
 
-	limit, err := strconv.ParseInt(res.Header.Get("X-RateLimit-Limit"), 10, 8)
+	limit, err := strconv.Atoi(res.Header.Get("X-RateLimit-Limit"))
 	if err != nil {
 		return err
 	}
 
 	Buckets[id] = Bucket{
-		Limit:     int(limit),
-		Remaining: int(remaining),
+		Limit:     limit,
+		Remaining: remaining,
 		Reset:     reset,
 	}
 

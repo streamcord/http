@@ -37,7 +37,7 @@ func (c *Client) MakeRequest(r objects.Request) (*http.Response, error) {
 	bucket := ratelimit.GetBucket(r.RatelimitBucket)
 	if bucket != nil {
 		if bucket.Remaining == 0 {
-			wait := time.Duration(bucket.Reset - time.Now().Unix())
+			wait := time.Duration(bucket.Reset - float64(time.Now().Unix()))
 			// If wait is below 0 then that means it's already reset and we don't have to wait
 			if wait > 0 {
 				time.Sleep(wait * time.Second)
@@ -71,7 +71,7 @@ func (c *Client) MakeRequest(r objects.Request) (*http.Response, error) {
 	if res.StatusCode == http.StatusTooManyRequests {
 		bucket = ratelimit.GetBucket(r.RatelimitBucket)
 		if bucket != nil {
-			wait := time.Duration(bucket.Reset - time.Now().Unix())
+			wait := time.Duration(bucket.Reset - float64(time.Now().Unix()))
 			if wait > 0 {
 				time.Sleep(wait * time.Second)
 				return c.MakeRequest(r)

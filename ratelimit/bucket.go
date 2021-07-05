@@ -3,7 +3,7 @@ package ratelimit
 type Bucket struct {
 	Limit     int
 	Remaining int
-	Reset     int64
+	Reset     float64
 }
 
 var (

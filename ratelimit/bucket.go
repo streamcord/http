@@ -7,7 +7,7 @@ type Bucket struct {
 }
 
 var (
-	Buckets map[string]Bucket
+	Buckets map[string]Bucket = make(map[string]Bucket)
 )
 
 // Gets an existing bucket or returns nil if it doesn't exist
